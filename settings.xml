@@ -26,8 +26,8 @@
       <!-- Anypoint Exchange repository for deployments via the v3 EMMP -->
       <id>anypoint-exchange-v3-student-deployment</id>
       <!-- students: to read from or deploy to the Exchange Maven repo of your Anypoint Platform organization, replace with credentials for a suitable account of your org -->
-      <username>advint</username>
-      <password>Mule12345</password>
+      <username>~~~Client~~~</username>
+      <password>92ad4921f3b945cfad8e4c595a672679~?~9388176DaD5D41308253B76ca2c3efEE</password>
     </server>
     <server>
       <!-- default Anypoint Exchange repository: the username determines which Anypoint Platform organization this belongs to -->

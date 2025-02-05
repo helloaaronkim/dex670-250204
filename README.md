@@ -14,4 +14,8 @@
 * Exchange Contributor
   * client id : 92ad4921f3b945cfad8e4c595a672679
   * client secret : 9388176DaD5D41308253B76ca2c3efEE
-  
+
+* env var
+
+export PROJECT_HOME=/Users/woohyeok.kim/Desktop/work/training/prints/dex670-250204
+export STUDENT_FILE=/Users/woohyeok.kim/Desktop/work/training/prints/CDEV-DEX670-EN-25oct2024-Student-Files

@@ -15,10 +15,13 @@
 		<relativePath>../parent-pom/pom.xml</relativePath>
 	</parent>
 	<groupId>af6f1910-04c0-4e63-9204-6445022e6468</groupId>
-	<artifactId>check-in-papi-app</artifactId>
+	<artifactId>mobile-notifications-eapp</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	<packaging>mule-application</packaging>
-	<name>check-in-papi</name>
+	<name>mobile-notifications-eapp</name>
+	<properties>
+		<api.layer>${api.layer.eapi}</api.layer>
+	</properties>
 	<build>
 		<plugins>
 			<plugin>
@@ -35,15 +38,24 @@
 		</plugins>
 	</build>
 	<dependencies>
-		<!-- limitation in Mule Maven tooling: must define before apikit! -->
+		<dependency>
+			<groupId>org.mule.connectors</groupId>
+			<artifactId>mule-email-connector</artifactId>
+			<classifier>mule-plugin</classifier>
+		</dependency>
 		<dependency>
 			<groupId>org.mule.connectors</groupId>
 			<artifactId>mule-http-connector</artifactId>
 			<classifier>mule-plugin</classifier>
 		</dependency>
 		<dependency>
-			<groupId>org.mule.modules</groupId>
-			<artifactId>mule-apikit-module</artifactId>
+			<groupId>org.mule.connectors</groupId>
+			<artifactId>mule-vm-connector</artifactId>
+			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>com.mulesoft.connectors</groupId>
+			<artifactId>anypoint-mq-connector</artifactId>
 			<classifier>mule-plugin</classifier>
 		</dependency>
 		<!-- standard dependencies for all Mule apps - start -->
@@ -52,22 +64,9 @@
 			<artifactId>apps-commons</artifactId>
 			<classifier>mule-plugin</classifier>
 		</dependency>
-		<!-- limitation in Mule Maven tooling: must be defined before apikit! -->
-		<!--
-	<dependency>
-		<groupId>org.mule.connectors</groupId>
-		<artifactId>mule-http-connector</artifactId>
-		<classifier>mule-plugin</classifier>
-	</dependency>
-	-->
 		<dependency>
 			<groupId>com.mulesoft.modules</groupId>
 			<artifactId>mule-secure-configuration-property-module</artifactId>
-			<classifier>mule-plugin</classifier>
-		</dependency>
-		<dependency>
-			<groupId>org.mule.modules</groupId>
-			<artifactId>mule-tracing-module</artifactId>
 			<classifier>mule-plugin</classifier>
 		</dependency>
 		<!-- test dependencies -->
@@ -90,5 +89,11 @@
 			<scope>test</scope>
 		</dependency>
 		<!-- standard dependencies for all Mule apps - end -->
+		<dependency>
+			<groupId>org.mule.modules</groupId>
+			<artifactId>mule-tracing-module</artifactId>
+			<version>1.1.0</version>
+			<classifier>mule-plugin</classifier>
+		</dependency>
 	</dependencies>
 </project>

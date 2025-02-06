@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- #%L MuleSoft Training - Anypoint Platform Development: Level 2 %% Copyright (C) 2019 - 2021 MuleSoft, Inc. All rights reserved. http://www.mulesoft.com 
+	%% The software in this package is published under the terms of the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International 
+	Public License, a copy of which has been included with this distribution in the LICENSE.txt file. #L% -->
+<mule
+	xmlns:tracing="http://www.mulesoft.org/schema/mule/tracing"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:email="http://www.mulesoft.org/schema/mule/email"
+	xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="  http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd  http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd    http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd  http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd  http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd  http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/tracing http://www.mulesoft.org/schema/mule/tracing/current/mule-tracing.xsd">
+	<flow name="retrieve-cancellation-event">
+		<anypoint-mq:subscriber
+			config-ref="amqConfig"
+			destination="cancelled-flights-mobile-queue-dev"
+			acknowledgementMode="MANUAL" circuitBreaker="Circuit_breaker">
+			<reconnect-forever frequency="1000" />
+		</anypoint-mq:subscriber>
+		<logger level="INFO" doc:name="attributes.properties.orderId default ''" doc:id="72c6fe93-56de-4a5a-b892-9322a5226566" message="#[attributes.properties.orderId default '']"/>
+		<logger level="INFO" doc:name="attributes.properties.correlationId default ''" doc:id="0283a892-5496-42f7-be1a-0daaa8f2a428" message="#[attributes.properties.correlationId default '']"/>
+		<tracing:with-correlation-id doc:name="With CorrelationID" doc:id="bff8d522-85ab-4a8b-8ecf-bc1ad146134a" correlationId="#['123']">
+			<logger level="INFO" doc:name="correlationId" doc:id="48e1b1a8-66e2-4258-9181-a7ec8d0d536e" message="#[correlationId]"/>
+		</tracing:with-correlation-id>
+		<logger level="INFO" doc:name="correlationId" doc:id="5d8def8b-4039-4c64-87ca-883bcf55a908" message="#[correlationId]"/>
+		<set-variable value="#[attributes.ackToken]" doc:name="mqToken" doc:id="a1fdd217-ada5-484d-bbc9-045ca9d48eb3" variableName="mqToken"/>
+		<logger
+			level="INFO"
+			message="Received"
+			doc:name="Received" />
+		<ee:transform doc:name="Convert to Our Event Format">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+               output application/json
+               ---
+               {
+                 pnr: payload.pnr,
+                 lastName: payload.lastNameOfPassenger
+               }]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<vm:publish queueName="mobile-app-native-notifs-q" doc:name="mobile-app-native-notifs-q" doc:id="133cbe3e-af9a-44e2-bcd1-1945b97651f2" config-ref="mobileAppNetworkVMConfig"/>
+		<anypoint-mq:ack doc:name="Ack" doc:id="de5dbc04-b406-4f07-8e0c-0e5a1ddd8cc3" config-ref="amqConfig" ackToken="#[vars.mqToken]"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="5510b1a3-4f52-45c6-a281-8616dd940355" >
+				<anypoint-mq:nack doc:name="Nack" doc:id="15c42923-cd36-497a-a070-018d1d7b10a4" config-ref="amqConfig" ackToken="#[vars.mqToken]"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>

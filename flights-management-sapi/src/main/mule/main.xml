@@ -3,6 +3,10 @@
 	%% The software in this package is published under the terms of the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International 
 	Public License, a copy of which has been included with this distribution in the LICENSE.txt file. #L% -->
 <mule
+	xmlns:json="http://www.mulesoft.org/schema/mule/json"
+	xmlns:xml-module="http://www.mulesoft.org/schema/mule/xml-module"
+	xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq"
 	xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
 	xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
 	xmlns="http://www.mulesoft.org/schema/mule/core"
@@ -13,11 +17,13 @@
 	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
 	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
-	xmlns:http="http://www.mulesoft.org/schema/mule/http"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="  http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd  http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd   http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd  http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd  http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd    http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd   http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd  http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd   http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd  http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd  http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd    http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
 http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
-http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd
+http://www.mulesoft.org/schema/mule/xml-module http://www.mulesoft.org/schema/mule/xml-module/current/mule-xml-module.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
 	<flow name="check-in-by-pnr">
 		<logger
 			level="INFO"
@@ -89,56 +95,85 @@ ns0#checkIn: {
 		<logger
 			level="INFO"
 			message="Received Cancellation Notification" />
+		<validation:all doc:name="All" doc:id="f22b766d-2f9a-41da-a52f-5ce8bdb2bec4" >
+			<validation:is-true expression="#[var ct = attributes.headers.'content-type' --- ((not isBlank(ct)) and (lower(ct) contains '/xml'))]" doc:name="content-type" />
+			<xml-module:validate-schema doc:name="schema/CancellationNotification.xsd" doc:id="03fec08b-365a-4e8e-9a73-3af31bd963d4" schemas="schema/CancellationNotification.xsd"/>
+		</validation:all>
 		<vm:publish
 			queueName="flight-cancel-notifs-q"
 			doc:name="flight-cancel-notifs-q"
 			doc:id="bf2e4eee-661c-4723-80cd-7f6feb3d6c2c"
 			config-ref="vmConfig"
 			sendCorrelationId="ALWAYS" />
+
+    <error-handler>
+      <on-error-continue when="#[['VALIDATION', 'XML-MODULE'] contains error.errorType.namespace]" enableNotifications="true" logException="true">
+        <set-variable variableName="httpStatus" value="400" doc:name="httpStatus = 400"/>
+      </on-error-continue>
+    </error-handler>
+
 	</flow>
 	<flow
 		name="deliver-flight-cancelled-event"
 		doc:id="175707b9-e13a-4da3-a5c1-e8b6ccd51b22">
 		<vm:listener
-			doc:name="flight-cancel-notifs-q"
-			doc:id="cf9bdb5a-baa4-4ffb-bc15-9dfd4f036637"
-			config-ref="vmConfig"
 			queueName="flight-cancel-notifs-q"
-			transactionalAction="ALWAYS_BEGIN">
+			transactionalAction="ALWAYS_BEGIN"
+			config-ref="vmConfig"
+			doc:name="flight-cancel-notifs-q">
 			<redelivery-policy
-				maxRedeliveryCount="2"
+				maxRedeliveryCount="3"
 				idExpression="#[correlationId]" />
 		</vm:listener>
 		<logger
 			level="INFO"
-			doc:name="'Received'"
-			doc:id="aa27bb40-426d-4365-a7b0-eff091600e66"
-			message="#['Received']" />
-		<ee:transform>
-			<ee:message>
-				<ee:set-payload><![CDATA[%dw 2.0
-          output application/json
-          ---
-          {
-            pnr: payload.CancellationNotification.PNR,
-            lastNameOfPassenger: payload.CancellationNotification.PassengerLastName
-          }]]></ee:set-payload>
-			</ee:message>
-		</ee:transform>
-		<error-handler>
-			<on-error-continue
-				type="MULE:REDELIVERY_EXHAUSTED"
-				enableNotifications="false"
-				logException="false">
-				<logger
-					level="ERROR"
-					message="Giving up"
-					doc:name="Giving up" />
-				<flow-ref
-					name="send-to-vm-dlq"
-					doc:name="send-to-vm-dlq" />
-			</on-error-continue>
-		</error-handler>
+			message="Received"
+			doc:name="Received" />
+		<try transactionalAction="BEGIN_OR_JOIN">
+			<ee:transform>
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+	          output application/json
+	          ---
+	          {
+	            pnr: payload.CancellationNotification.PNR,
+	            lastNameOfPassenger: payload.CancellationNotification.PassengerLastName
+	          }]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<json:validate-schema doc:name="schema/FlightCancelledEvent.schema.json" doc:id="4f2d1ecd-c655-4e99-b9da-ab2914d79bbc" schema="schema/FlightCancelledEvent.schema.json"/>
+			<set-variable
+				variableName="msgValid"
+				value="#[true]"
+				doc:name="msgValid = true" />
+			<error-handler>
+				<on-error-continue
+					enableNotifications="false"
+					logException="false">
+					<flow-ref
+						name="send-to-vm-dlq"
+						doc:name="send-to-vm-dlq" />
+					<set-variable
+						variableName="msgValid"
+						value="#[false]"
+						doc:name="msgValid = false" />
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<choice>
+			<when expression="#[vars.msgValid]">
+				<anypoint-mq:publish
+					destination="cancelled-flights-exchg-dev"
+					config-ref="amqConfig"
+					doc:name="cancelled-flights-exchg-dev" >
+					<anypoint-mq:properties ><![CDATA[#[{
+	"correlationId": correlationId,
+	"orderId": 12345,
+	"message": "お疲れ様でしたー"
+}]]]></anypoint-mq:properties>
+				</anypoint-mq:publish>
+			</when>
+		</choice>
 	</flow>
 	<sub-flow name="send-to-vm-dlq">
 		<vm:publish

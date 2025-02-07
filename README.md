@@ -19,3 +19,17 @@
 
 export PROJECT_HOME=/Users/woohyeok.kim/Desktop/work/training/prints/dex670-250204
 export STUDENT_FILE=/Users/woohyeok.kim/Desktop/work/training/prints/CDEV-DEX670-EN-25oct2024-Student-Files
+
+
+curl -ik -X PUT -H "Content-Type: application/json" -d "{\"lastName\":\"Mule\",\"numBags\":2}" https://check-in-papi-app-as9da3.5sc6y6-2.usa-e2.cloudhub.io/api/v1/tickets/PNR123/checkin
+
+
+curl -ik -X PUT -H "Content-Type: application/json" -d "{\"lastName\":\"Mule\",\"numBags\":2}" https://check-in-papi-app-as9da3.5sc6y6-2.usa-e2.cloudhub.io/api/v1/tickets/PNR123/checkin
+
+
+
+
+https://check-in-papi-app-as9da3.5sc6y6-2.usa-e2.cloudhub.io/
+
+
+mvn -B -f bom/pom.xml archetype:generate -DarchetypeGroupId=org.mule.extensions -DarchetypeArtifactId=mule-extensions-xml-archetype -DarchetypeVersion=1.2.0 -DgroupId=af6f1910-04c0-4e63-9204-6445022e6468 -DartifactId=resilience-mule-extension -DmuleConnectorName=resilience-mule-extension -DextensionName=resilience -Dpackage=. -DoutputDirectory=../
